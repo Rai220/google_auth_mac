@@ -5,7 +5,9 @@
 Native SwiftUI application for macOS 14+, Swift tools 6.0 / Swift 5 language mode. No third-party runtime dependencies, server, telemetry, or cloud account.
 
 - `Sources/AuthenticatorCore`: OTP generation, Base32, Google migration protobuf, QR decoding (Vision), Keychain persistence.
-- `Sources/MacAuthenticator`: SwiftUI/AppKit UI, application state, LocalAuthentication, camera scanning.
+- `Sources/MacAuthenticator`: SwiftUI/AppKit UI, settings window, camera scanning.
+- `Sources/AuthenticatorState`: application state and optional LocalAuthentication policy (disabled by default).
+- `Tests/AuthenticatorStateChecks`: real Store flows with synthetic accounts and an injected authenticator; uses isolated preferences.
 - `Tests/AuthenticatorCoreTests/main.swift`: executable regression suite, including RFC 4226/6238 vectors and an isolated temporary Keychain namespace.
 - `scripts/make-fixtures.py`: independent encoder for public synthetic migration fixtures.
 - `Resources/Info.plist`: bundle metadata. `VERSION` is the release version source of truth.
@@ -19,6 +21,7 @@ Run commands from the repository root:
 ```sh
 python3 scripts/make-fixtures.py --check
 swift run AuthenticatorChecks
+swift run AuthenticatorStateChecks
 ./scripts/build-app.sh
 ./scripts/package-release.sh
 ```
@@ -35,7 +38,7 @@ Release checks must cover the packaged app: bundle version, CPU architecture, va
 - Preserve the production bundle identifier and Keychain service/account identifiers unless an explicit migration is implemented and verified.
 - Treat import data as untrusted. Keep size bounds, strict parameter validation, full multi-QR assembly, duplicate handling, and atomic persistence. Support export versions 1 and 2, missing batch IDs, and empty account names.
 - Keep processing local. Do not send QR images, secrets, or generated codes to external services.
-- Preserve fail-closed storage handling, authentication on unlock, and clipboard ownership checks.
+- Preserve fail-closed storage handling, authentication on unlock when enabled (off by default), and clipboard ownership checks.
 
 ## Release workflow
 

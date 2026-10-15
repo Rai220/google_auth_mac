@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticatorState
 import AppKit
 import AuthenticatorCore
 
@@ -21,6 +22,7 @@ import AuthenticatorCore
                 Button("Заблокировать") { store.lock() }.keyboardShortcut("l", modifiers: [.command, .shift])
             }
         }
+        Settings { SettingsView().environmentObject(store) }
     }
 }
 struct ContentView: View {
@@ -111,6 +113,7 @@ struct ContentView: View {
                 Text("Коды генерируются на устройстве. Без аккаунта и облака.").font(.caption).foregroundStyle(.secondary).lineSpacing(3)
             }
             Divider()
+            SettingsLink { Label("Настройки", systemImage: "gearshape") }.buttonStyle(.plain)
             Button { store.locked ? store.unlock() : store.lock() } label: { Label(store.locked ? "Разблокировать" : "Заблокировать", systemImage: store.locked ? "lock.open" : "lock") }.buttonStyle(.plain)
         }.padding(20).frame(width: 200).background(.ultraThinMaterial)
     }
@@ -124,7 +127,7 @@ struct ContentView: View {
         }.frame(maxWidth: .infinity, maxHeight: .infinity).padding(28)
     }
     private var lockedState: some View {
-        VStack(spacing: 20) { Image(systemName: "lock.shield").font(.system(size: 64, weight: .light)).foregroundStyle(.teal); Text("Ваши коды под замком").font(.title2.bold()); Button("Разблокировать с Touch ID или паролем") { store.unlock() }.buttonStyle(.borderedProminent).controlSize(.large) }.frame(maxWidth: .infinity, maxHeight: .infinity)
+        VStack(spacing: 20) { Image(systemName: "lock.shield").font(.system(size: 64, weight: .light)).foregroundStyle(.teal); Text("Ваши коды под замком").font(.title2.bold()); Button(store.requiresAuthentication ? "Разблокировать с Touch ID или паролем" : "Показать коды") { store.unlock() }.buttonStyle(.borderedProminent).controlSize(.large).disabled(store.authenticating) }.frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 struct AccountCard: View {

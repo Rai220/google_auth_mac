@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticatorState
 import AVFoundation
 
 final class CameraScanner: NSObject, ObservableObject, AVCaptureMetadataOutputObjectsDelegate {

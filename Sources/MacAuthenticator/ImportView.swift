@@ -1,4 +1,5 @@
 import SwiftUI
+import AuthenticatorState
 import AuthenticatorCore
 
 struct ImportView: View {
