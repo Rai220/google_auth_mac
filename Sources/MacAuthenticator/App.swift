@@ -115,6 +115,7 @@ struct ContentView: View {
             Divider()
             SettingsLink { Label("Настройки", systemImage: "gearshape") }.buttonStyle(.plain)
             Button { store.locked ? store.unlock() : store.lock() } label: { Label(store.locked ? "Разблокировать" : "Заблокировать", systemImage: store.locked ? "lock.open" : "lock") }.buttonStyle(.plain)
+            Button { NSApp.terminate(nil) } label: { Label("Выйти", systemImage: "power") }.buttonStyle(.plain).help("Завершить приложение (⌘Q)")
         }.padding(20).frame(width: 200).background(.ultraThinMaterial)
     }
     private var emptyState: some View {

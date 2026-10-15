@@ -28,10 +28,9 @@ struct SettingsView: View {
                     .font(.caption).foregroundStyle(.secondary)
                 Spacer()
                 Button("Готово") { closeSettings() }
-                    .keyboardShortcut(.defaultAction)
+                    .keyboardShortcut(.cancelAction)
             }
         }.padding(24).frame(width: 440)
-            .onExitCommand { closeSettings() }
     }
     private func closeSettings() { NSApp.keyWindow?.performClose(nil) }
 }
