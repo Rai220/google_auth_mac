@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 import AuthenticatorState
 
 struct SettingsView: View {
@@ -22,6 +23,15 @@ struct SettingsView: View {
             Divider()
             Text("Ключи всегда хранятся в Связке ключей macOS, независимо от этой настройки.")
                 .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            HStack {
+                Text("Изменения сохраняются автоматически.")
+                    .font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Button("Готово") { closeSettings() }
+                    .keyboardShortcut(.defaultAction)
+            }
         }.padding(24).frame(width: 440)
+            .onExitCommand { closeSettings() }
     }
+    private func closeSettings() { NSApp.keyWindow?.performClose(nil) }
 }
