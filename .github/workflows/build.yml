@@ -1,0 +1,116 @@
+name: Build and release
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+jobs:
+  build:
+    name: macOS (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    env:
+      APP_ARCH: ${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Validate toolchain and release version
+        shell: bash
+        run: |
+          set -euo pipefail
+          swift --version
+          test "$(uname -m)" = "$APP_ARCH"
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            test "$GITHUB_REF_NAME" = "v$(cat VERSION)"
+          fi
+          python3 scripts/make-fixtures.py --check
+      - name: Run regression checks with a temporary Keychain
+        shell: bash
+        run: |
+          set -euo pipefail
+          TEST_KEYCHAIN="$RUNNER_TEMP/authenticator-tests.keychain-db"
+          TEST_KEYCHAIN_PASSWORD=$(openssl rand -hex 24)
+          security create-keychain -p "$TEST_KEYCHAIN_PASSWORD" "$TEST_KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$TEST_KEYCHAIN"
+          security unlock-keychain -p "$TEST_KEYCHAIN_PASSWORD" "$TEST_KEYCHAIN"
+          security list-keychains -d user -s "$TEST_KEYCHAIN"
+          security default-keychain -d user -s "$TEST_KEYCHAIN"
+          unset TEST_KEYCHAIN_PASSWORD
+          swift run AuthenticatorChecks
+      - name: Build application
+        run: ./scripts/build-app.sh
+      - name: Package and verify ZIP and DMG
+        run: ./scripts/package-release.sh
+      - name: Upload packages
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: macos-${{ matrix.arch }}
+          path: dist/releases/*
+          if-no-files-found: error
+          retention-days: 14
+      - name: Remove temporary Keychain
+        if: always()
+        shell: bash
+        run: |
+          if [[ -f "$RUNNER_TEMP/authenticator-tests.keychain-db" ]]; then
+            security delete-keychain "$RUNNER_TEMP/authenticator-tests.keychain-db"
+          fi
+
+  release:
+    name: Publish release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: macos-*
+          merge-multiple: true
+          path: release-assets
+      - name: Verify and publish complete release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION=$(cat VERSION)
+          test "$GITHUB_REF_NAME" = "v$VERSION"
+          cd release-assets
+          test "$(find . -maxdepth 1 -name '*.zip' | wc -l)" -eq 2
+          test "$(find . -maxdepth 1 -name '*.dmg' | wc -l)" -eq 2
+          cat MacAuthenticator-*.sha256 > SHA256SUMS.txt
+          sha256sum --check SHA256SUMS.txt
+          cd ..
+          if gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft > release-state.txt 2>/dev/null; then
+            test "$(cat release-state.txt)" = true
+          else
+            gh release create "$GITHUB_REF_NAME" --verify-tag --draft \
+              --title "Mac Authenticator $VERSION" --notes-file .github/RELEASE_NOTES.md
+          fi
+          gh release upload "$GITHUB_REF_NAME" release-assets/*.zip release-assets/*.dmg release-assets/SHA256SUMS.txt --clobber
+          gh release edit "$GITHUB_REF_NAME" --draft=false --latest

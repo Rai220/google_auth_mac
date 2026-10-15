@@ -1,0 +1,14 @@
+.build/
+dist/
+.DS_Store
+*.xcuserstate
+# Local exports, credentials and signing material must stay outside the repository.
+.env
+.env.*
+*.p12
+*.p8
+*.keychain-db
+private/
+local-data/
+# Generated synthetic GUI fixture; source fixtures are the reviewed .txt files.
+Tests/AuthenticatorCoreTests/Fixtures/*.png
