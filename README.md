@@ -2,95 +2,118 @@
 
 [![Build and release](https://github.com/Rai220/google_auth_mac/actions/workflows/build.yml/badge.svg)](https://github.com/Rai220/google_auth_mac/actions/workflows/build.yml)
 
-[**Скачать последнюю версию для macOS**](https://github.com/Rai220/google_auth_mac/releases/latest)
+**English** · [Русский](README.ru.md) · [**Download for macOS**](https://github.com/Rai220/google_auth_mac/releases/latest)
 
-Нативное приложение SwiftUI для macOS 14+ с импортом экспорта Google Authenticator. Работает локально, без регистрации, сервера, аналитики и сторонних зависимостей.
+A native, offline authenticator for **macOS 14+**, built with SwiftUI. Import your Google Authenticator accounts and generate codes on your Mac. No registration, server, analytics, cloud sync, or third-party runtime dependencies.
 
-## Запуск
+![Mac Authenticator in English, showing three fictional demo accounts](docs/images/mac-authenticator-demo.jpg)
 
-На [странице релизов](https://github.com/Rai220/google_auth_mac/releases/latest) выберите **arm64** для Apple Silicon или **x86_64** для Intel. Требуется macOS 14 или новее.
+*Actual application screenshot in demo mode. All accounts and keys are synthetic; no personal data is shown.*
 
-Откройте DMG и перетащите приложение в Applications, либо распакуйте ZIP. В каждом релизе опубликован `SHA256SUMS.txt` для проверки загрузок.
+## Download and install
 
-**Подпись:** сборки подписаны ad-hoc, без Apple Developer ID и нотариализации. При первом запуске macOS может потребовать «Всё равно открыть» в «Системные настройки → Конфиденциальность и безопасность». Используйте эту кнопку только для проверенной загрузки из этого репозитория; политика управляемого Mac может запрещать такой запуск.
+Choose a package from the [latest release](https://github.com/Rai220/google_auth_mac/releases/latest):
 
-Локальная сборка находится в `dist/Mac Authenticator.app`. Скрипты сборки не устанавливают приложение и не меняют существующие аккаунты.
+- **Apple Silicon:** `arm64`.
+- **Intel Mac:** `x86_64`.
 
-Откройте приложение и нажмите **Импорт**. На телефоне в Google Authenticator выберите **Перенести аккаунты → Экспорт аккаунтов**. Добавьте все QR-коды серии одним из способов:
+Open the DMG and drag **Mac Authenticator** into Applications, or extract the ZIP and move the app there. Each release includes `SHA256SUMS.txt` for download verification.
 
-- **Открыть файл…**: изображения PNG/JPEG/HEIC и другие форматы ImageIO, либо текстовый файл со ссылками, по одной на строку.
-- **Из буфера**: изображение QR-кода или ссылка `otpauth-migration://` / `otpauth://`.
-- **Камера**: покажите все QR-коды по очереди. При первом использовании macOS запросит доступ к камере.
-- Перетащите изображения или текстовые файлы в главное окно.
+**Signing:** releases are ad-hoc signed, without Apple Developer ID signing or notarization. macOS may require **System Settings → Privacy & Security → Open Anyway** on first launch. Use this only after verifying that your download came from this repository. Managed Macs may prohibit running such apps.
 
-После распознавания приложение показывает аккаунты и число недостающих частей. Нажмите **Добавить** после загрузки всех частей. Поддерживаются версии экспорта 1 и 2, в том числе версия 2 без `batch_id` и аккаунты без имени. Импортируйте одну серию экспорта за раз: в версии 2 Google может не передавать идентификатор серии. Повторный импорт того же ключа пропускается; существующий счётчик HOTP сохраняется.
+## Import your accounts
 
-Для отдельного ключа используйте **Добавить вручную**. Поддерживаются TOTP/HOTP, SHA-1/SHA-256/SHA-512, 6/8 цифр и настраиваемый период TOTP. MD5 и неизвестные параметры отклоняются с ошибкой. Стандартный экспорт Google использует период 30 секунд.
+On your phone, open Google Authenticator and choose **Transfer accounts → Export accounts**. In Mac Authenticator, click **Import**, then add every QR code in the export:
 
-Нажатие на код копирует его на 30 секунд. Буфер очищается, только если приложение всё ещё владеет его содержимым. Для HOTP кнопка **Следующий код** увеличивает и сохраняет счётчик. Для правильных TOTP-кодов системное время Mac должно быть точным.
+- **Open file…** — PNG/JPEG/HEIC and other ImageIO-supported images, or a text file with one export link per line.
+- **From clipboard** — a QR image, `otpauth-migration://` link, or `otpauth://` link.
+- **Camera** — show each QR code in sequence. macOS asks for camera access on first use.
+- Drag images or text files into the main window.
 
-Команды: `⌘I` — импорт, `⌘O` — открыть файл, `⇧⌘V` — импорт из буфера, `⇧⌘L` — блокировка. Название аккаунта и сервиса можно изменить в меню карточки.
+The import preview lists the accounts and any missing QR codes. Click **Add** when all parts are present. Export versions 1 and 2 are supported, including version 2 without a batch ID and accounts without names. Import one export batch at a time: Google may omit its identifier. Duplicate credentials are skipped, preserving existing HOTP counters.
 
-## Хранение
+Use **Add manually** for an individual secret. Supported options: TOTP/HOTP, SHA-1/SHA-256/SHA-512, 6 or 8 digits, and a configurable TOTP period. MD5 and unknown parameters are rejected. Standard Google exports use a 30-second period.
 
-Все записи, включая ключи, сохраняются одним элементом Generic Password в macOS Keychain (`local.macauthenticator.vault.v1`, `accounts`), с доступностью `WhenUnlockedThisDeviceOnly`, без iCloud-синхронизации. Открытые JSON-файлы и ключи в UserDefaults не создаются. Ошибка чтения хранилища блокирует запись, чтобы не затереть существующие данные.
+Click a code to copy it for 30 seconds. The clipboard is cleared only if the app still owns its contents. **Next code** advances and saves a HOTP counter. Keep your Mac’s clock accurate for TOTP codes. Rename a service or account through its card menu.
 
-Запрос Touch ID или пароля macOS **по умолчанию выключен**. Включить его можно в **Mac Authenticator → Настройки… (⌘,)** или через кнопку «Настройки» в боковом меню. Выбор сохраняется между запусками.
+| Shortcut | Action |
+| --- | --- |
+| `⌘I` | Import |
+| `⌘O` | Open a file |
+| `⇧⌘V` | Import from clipboard |
+| `⇧⌘L` | Lock |
+| `⌘,` | Settings |
+| `⌘Q` | Quit |
 
-При включённой защите коды скрываются при запуске, переключении пользователя, сне Mac и ручной блокировке; разблокировка использует системный Touch ID или пароль macOS. Изменить настройку можно только после разблокировки. При выключенной защите приложение открывает аккаунты без дополнительного подтверждения; после ручной блокировки кнопка «Показать коды» также не требует аутентификации. Системные запросы доступа к Связке ключей при смене подписи приложения управляются самой macOS и не отключаются этой настройкой. Swift не гарантирует физическое обнуление всех копий памяти. Защита Keychain относится к текущей учётной записи macOS; приложение не изолирует данные от администратора/скомпрометированной системы.
+The sidebar also includes **Settings** and **Quit**. Close settings with **Done** or Escape; changes are saved automatically.
 
-QR-коды экспорта содержат секреты. Не публикуйте их. Приложение не делает резервную копию: до проверки переноса сохраните доступ к исходному Authenticator или резервным кодам сервисов. Удаление приложения не удаляет записи из Keychain.
+## Language and authentication
 
-## Сборка и проверки
+In **Settings → Language**, select **Follow system**, **English**, or **Русский**. The app initially follows the system language (Russian for a Russian system, English otherwise). An explicit choice takes effect immediately and survives restarts. Account names are preserved. macOS-owned dialogs and standard menus follow the system’s app language settings.
 
-Достаточно Apple Command Line Tools со Swift 6; Xcode IDE не требуется:
+**Require Touch ID or macOS password** is **off by default**. Enable it in Settings if you want confirmation when opening or unlocking the app. With protection enabled, codes are hidden at startup, after sleep, after switching users, and when manually locked. Unlock before changing this protection setting.
+
+With protection off, accounts open without additional authentication; **Show codes** also reveals a manually locked vault without a prompt. macOS Keychain access prompts after an app signature change are controlled by macOS, independently of this setting.
+
+## Storage and privacy
+
+Accounts and secrets are stored in a single macOS Keychain Generic Password item (`local.macauthenticator.vault.v1`, account `accounts`) with `WhenUnlockedThisDeviceOnly` accessibility and no iCloud synchronization. No plaintext JSON vault or secrets in UserDefaults are created. A read failure blocks writes to protect existing data.
+
+Keychain protection belongs to the current macOS user; the app does not isolate secrets from an administrator or a compromised system. Swift does not guarantee physical zeroing of every memory copy.
+
+Export QR codes contain secret keys: do not publish them. The app does not create a backup. Keep access to your original authenticator or service recovery codes until you have verified the transfer. Removing the app does not delete its Keychain item.
+
+## Build and test
+
+Apple Command Line Tools with Swift 6 are sufficient; the Xcode IDE is not required:
 
 ```sh
 python3 scripts/make-fixtures.py --check
+python3 scripts/check-localization.py
 swift run AuthenticatorChecks
 swift run AuthenticatorStateChecks
 ./scripts/build-app.sh
 ./scripts/package-release.sh
 ```
 
-Скрипт собирает архитектуру текущего компьютера; `APP_ARCH=arm64` или `APP_ARCH=x86_64` позволяет выбрать архитектуру явно. Пакеты ZIP/DMG и контрольные суммы создаются в `dist/releases/`. Версия берётся из `VERSION`. Используется ad-hoc подпись. При пересборке или смене сборки macOS может запросить доступ новой версии к существующему элементу Keychain.
+The app is built at `dist/Mac Authenticator.app`; ZIP/DMG packages and checksums appear in `dist/releases/`. `VERSION` is the version source of truth. Builds use the host architecture unless `APP_ARCH=arm64` or `APP_ARCH=x86_64` is specified. Scripts do not install the app or change existing accounts. Builds are ad-hoc signed; macOS may ask to grant a new build access to the existing Keychain item.
 
-`AuthenticatorChecks` — исполняемый тестовый набор без XCTest (XCTest отсутствует в установленном Command Line Tools). Проверяет все векторы RFC 4226/6238, Base32, параметры URI, protobuf, серии/дубликаты, повреждённые данные, полный путь QR → аккаунты → код и запись/чтение/обновление Keychain в отдельном временном namespace. Тестовые записи удаляются после проверки.
+`AuthenticatorChecks` is an executable suite that does not require XCTest. It covers RFC 4226/6238 vectors, Base32, URI parameters, protobuf, batches, duplicates, malformed input, the QR-to-code flow, and Keychain operations in a temporary namespace. `AuthenticatorStateChecks` checks optional authentication, language selection, persistence, interpolation, and preservation of account data.
 
-`python3 scripts/make-fixtures.py` пересоздаёт только синтетические фикстуры. Чтобы получить тестовый PNG:
+Fixtures are synthetic. Regenerate them with `python3 scripts/make-fixtures.py`. Generate a test QR image with:
 
 ```sh
 QR_FIXTURE_OUTPUT="$PWD/Tests/AuthenticatorCoreTests/Fixtures/migration.png" swift run AuthenticatorChecks
 ```
 
-Для локальной проверки импорта без сохранения и без вывода ключей/имён:
+Validate an import locally without saving or printing account names or secrets:
 
 ```sh
 swift run AuthenticatorChecks --inspect-import /path/to/qr1.png /path/to/qr2.png
 ```
 
-Демонстрационный режим `MacAuthenticator --demo` использует только память и публичные тестовые ключи.
+`MacAuthenticator --demo` uses in-memory accounts with public test keys and never reads or writes the real vault. The README screenshot is captured from this mode.
 
-## GitHub Actions и релизы
+## Automated builds and releases
 
-На push в `main` и pull request запускаются тесты и сборка на отдельных нативных runner для Apple Silicon и Intel. ZIP/DMG доступны как артефакты workflow в течение 14 дней. Workflow также можно запустить вручную.
+Pushes to `main` and pull requests run tests and package builds on native Apple Silicon and Intel GitHub Actions runners. Workflow artifacts are retained for 14 days; manual runs are also supported.
 
-Для нового публичного релиза обновите `VERSION` в формате `MAJOR.MINOR.PATCH`, закоммитьте изменение и после успешной проверки создайте тег:
+For a release, update `VERSION` (`MAJOR.MINOR.PATCH`), commit, wait for successful CI, then tag that commit:
 
 ```sh
 git tag -a "v$(cat VERSION)" -m "Mac Authenticator $(cat VERSION)"
 git push origin "v$(cat VERSION)"
 ```
 
-Тег должен совпадать с `VERSION`. После успешных тестов и сборок на обеих архитектурах workflow создаёт черновик, загружает четыре пакета и общий `SHA256SUMS.txt`, затем публикует релиз. Опубликованные версии не перезаписываются. Используется встроенный `GITHUB_TOKEN`; отдельный PAT не нужен. Шаг публикации — единственный с правом `contents: write`.
+The tag must match `VERSION`. After both architecture jobs pass, the workflow creates a draft, uploads four packages and `SHA256SUMS.txt`, then publishes it. Published versions are never overwritten. Only the publishing job has `contents: write`; it uses the built-in `GITHUB_TOKEN`.
 
-Правила работы с кодом и секретами — в [AGENTS.md](AGENTS.md). В репозитории только публичные синтетические фикстуры; реальные экспорты нельзя включать в коммиты, артефакты или отчёты.
+See [AGENTS.md](AGENTS.md) for development and secret-handling rules. Never include real exports in commits, artifacts, or reports.
 
-## Источники форматов
+## Format references
 
-- [Google: перенос аккаунтов](https://support.google.com/accounts/answer/1066447?hl=ru)
+- [Google: transfer authenticator accounts](https://support.google.com/accounts/answer/1066447?hl=en)
 - [Google: Key URI Format](https://github.com/google/google-authenticator/wiki/Key-Uri-Format)
-- [Исследование protobuf-формата экспорта](https://github.com/qistoph/otp_export/blob/master/OtpMigration.proto) — неофициальная реконструкция, а не стабильный API Google.
-- [RFC 4226](https://www.rfc-editor.org/rfc/rfc4226), [RFC 6238](https://www.rfc-editor.org/rfc/rfc6238).
+- [Export protobuf reconstruction](https://github.com/qistoph/otp_export/blob/master/OtpMigration.proto) — an unofficial reconstruction, not a stable Google API.
+- [RFC 4226](https://www.rfc-editor.org/rfc/rfc4226) and [RFC 6238](https://www.rfc-editor.org/rfc/rfc6238).
 
-Независимое приложение, не продукт Google. Декомпиляция и подключение к телефону для импорта не требуются.
+An independent application, not a Google product. Import does not require decompilation or a direct connection to your phone.

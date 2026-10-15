@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-<key>CFBundleDevelopmentRegion</key><string>ru</string>
+<key>CFBundleDevelopmentRegion</key><string>en</string>
+<key>CFBundleLocalizations</key><array><string>en</string><string>ru</string></array>
 <key>CFBundleExecutable</key><string>MacAuthenticator</string>
 <key>CFBundleIdentifier</key><string>local.macauthenticator.app</string>
 <key>CFBundleName</key><string>Mac Authenticator</string>
@@ -11,7 +12,7 @@
 <key>CFBundleVersion</key><string>1</string>
 <key>LSMinimumSystemVersion</key><string>14.0</string>
 <key>NSHighResolutionCapable</key><true/>
-<key>NSCameraUsageDescription</key><string>Сканировать QR-коды экспорта Google Authenticator с экрана телефона.</string>
+<key>NSCameraUsageDescription</key><string>Scan Google Authenticator export QR codes from your phone.</string>
 <key>CFBundleIconFile</key><string>AppIcon</string>
 <key>CFBundleURLTypes</key><array><dict><key>CFBundleURLName</key><string>Authenticator import</string><key>CFBundleURLSchemes</key><array><string>otpauth</string><string>otpauth-migration</string></array></dict></array>
 <key>CFBundleDocumentTypes</key><array><dict><key>CFBundleTypeName</key><string>Authenticator QR or URI</string><key>CFBundleTypeRole</key><string>Viewer</string><key>LSHandlerRank</key><string>Alternate</string><key>LSItemContentTypes</key><array><string>public.image</string><string>public.plain-text</string></array></dict></array>

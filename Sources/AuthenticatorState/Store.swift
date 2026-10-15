@@ -1,7 +1,7 @@
+import AuthenticatorCore
 import SwiftUI
 import AppKit
 import LocalAuthentication
-import AuthenticatorCore
 
 @MainActor public final class Store: ObservableObject {
     @Published public var accounts: [Account] = []
@@ -18,6 +18,7 @@ import AuthenticatorCore
     public let demo: Bool
     @Published public private(set) var requiresAuthentication: Bool
     @Published public private(set) var authenticating = false
+    @Published public private(set) var language: AppLanguage
     private let defaults: UserDefaults
     private let authenticate: () async throws -> Void
     private let authenticationAvailable: () -> Bool
@@ -30,15 +31,16 @@ import AuthenticatorCore
                 },
                 authenticate: @escaping () async throws -> Void = {
                     let context = LAContext()
-                    guard try await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: "Показать коды двухфакторной аутентификации") else { throw LAError(.authenticationFailed) }
+                    guard try await context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: L10n.text("Show two-factor authentication codes")) else { throw LAError(.authenticationFailed) }
                 }) {
         self.demo = demo ?? ProcessInfo.processInfo.arguments.contains("--demo")
         self.defaults = defaults
+        self.language = AppLanguage.saved(in: defaults)
         self.authenticate = authenticate
         self.authenticationAvailable = authenticationAvailable
         self.requiresAuthentication = defaults.bool(forKey: Self.authenticationPreferenceKey)
         if self.demo {
-            accounts = [Account(name: "alex@example.com", issuer: "Google", secret: Data("12345678901234567890".utf8)), Account(name: "alex", issuer: "GitHub", secret: Data("demo-secret-github".utf8)), Account(name: "Рабочий аккаунт", issuer: "Cloud", secret: Data("demo-secret-cloud".utf8))]
+            accounts = [Account(name: "alex@example.com", issuer: "Google", secret: Data("12345678901234567890".utf8)), Account(name: "alex", issuer: "GitHub", secret: Data("demo-secret-github".utf8)), Account(name: "work@example.com", issuer: "Cloud", secret: Data("demo-secret-cloud".utf8))]
             demoAccounts = accounts
             loaded = true
         } else {
@@ -51,15 +53,24 @@ import AuthenticatorCore
         NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.sessionDidResignActiveNotification, object: nil, queue: .main) { [weak self] _ in Task { @MainActor in self?.handleSessionInactive() } }
         NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.willSleepNotification, object: nil, queue: .main) { [weak self] _ in Task { @MainActor in self?.handleSessionInactive() } }
     }
+    public func setLanguage(_ language: AppLanguage) {
+        defaults.set(language.rawValue, forKey: AppLanguage.preferenceKey)
+        self.language = language
+        status = nil
+        error = nil
+    }
+    public func text(_ key: String, _ arguments: String...) -> String {
+        L10n.render(key, arguments: arguments, language: language)
+    }
     private func reload() {
         do { accounts = try vault.load(); loaded = true; locked = false }
         catch { loaded = false; locked = true; self.error = error.localizedDescription }
     }
     public func commit(_ updated: [Account]) throws {
-        guard loaded, !locked else { throw AuthError.invalid("Сначала разблокируйте хранилище.") }
+        guard loaded, !locked else { throw AuthError.invalid(text("Unlock the vault first.")) }
         if !demo {
             try vault.save(updated)
-            guard try vault.load() == updated else { throw AuthError.invalid("Не удалось проверить сохранённые аккаунты.") }
+            guard try vault.load() == updated else { throw AuthError.invalid(text("Could not verify the saved accounts.")) }
         }
         accounts = updated
         if demo { demoAccounts = updated }
@@ -72,7 +83,7 @@ import AuthenticatorCore
     public func setRequiresAuthentication(_ enabled: Bool) {
         guard !locked, !authenticating else { return }
         if enabled && !authenticationAvailable() {
-            error = "Touch ID или пароль macOS недоступны. Настройте пароль входа в macOS."
+            error = text("Touch ID or macOS password is unavailable. Set up a macOS login password.")
             return
         }
         error = nil
@@ -99,8 +110,8 @@ import AuthenticatorCore
             let code = try account.code()
             NSPasteboard.general.clearContents(); NSPasteboard.general.setString(code, forType: .string)
             let change = NSPasteboard.general.changeCount; copiedChange = change
-            status = "Код скопирован на 30 секунд"
-            Task { try? await Task.sleep(for: .seconds(30)); if self.copiedChange == change { self.clearClipboard(); self.status = "Буфер обмена очищен" } }
+            status = text("Code copied for 30 seconds")
+            Task { try? await Task.sleep(for: .seconds(30)); if self.copiedChange == change { self.clearClipboard(); self.status = text("Clipboard cleared") } }
         } catch { self.error = error.localizedDescription }
     }
     private func clearClipboard() {
@@ -108,7 +119,7 @@ import AuthenticatorCore
         copiedChange = nil
     }
     public func advance(_ account: Account) {
-        guard let index = accounts.firstIndex(where: { $0.id == account.id }), account.counter < UInt64.max else { error = "Счётчик достиг максимума."; return }
+        guard let index = accounts.firstIndex(where: { $0.id == account.id }), account.counter < UInt64.max else { error = text("The counter has reached its maximum."); return }
         var updated = accounts; updated[index].counter += 1
         do { try commit(updated) } catch { self.error = error.localizedDescription }
     }
@@ -119,26 +130,26 @@ import AuthenticatorCore
         do { try commit(updated) } catch { self.error = error.localizedDescription }
     }
     public func add(_ parts: [ImportPart]) {
-        guard !locked else { error = "Разблокируйте приложение перед импортом."; return }
+        guard !locked else { error = text("Unlock the app before importing."); return }
         do { try session.add(parts); importing = true } catch { self.error = error.localizedDescription }
     }
     public var newAccounts: [Account] { session.accounts.filter { candidate in !accounts.contains { $0.sameCredential(as: candidate) } } }
     public func finishImport() {
-        guard session.missingParts == 0 else { error = "Добавьте все QR-коды серии."; return }
+        guard session.missingParts == 0 else { error = text("Add every QR code in the batch."); return }
         do {
             let additions = newAccounts
             try commit(accounts + additions)
-            status = "Добавлено аккаунтов: \(additions.count)"
+            status = text("Accounts added: {0}", String(additions.count))
             session = ImportSession(); importing = false
         } catch { self.error = error.localizedDescription }
     }
     public func openFiles() {
         let panel = NSOpenPanel(); panel.allowsMultipleSelection = true; panel.canChooseDirectories = false
-        panel.allowedContentTypes = [.image, .plainText]; panel.message = "Выберите изображения QR-кодов или текстовый файл со ссылками экспорта."
+        panel.allowedContentTypes = [.image, .plainText]; panel.message = text("Choose QR code images or a text file containing export links.")
         if panel.runModal() == .OK { readFiles(panel.urls) }
     }
     public func readFiles(_ urls: [URL]) {
-        guard !locked else { error = "Разблокируйте приложение перед открытием файла."; return }
+        guard !locked else { error = text("Unlock the app before opening a file."); return }
         pendingURLs.append(contentsOf: urls)
         processNextFiles()
     }
@@ -164,7 +175,7 @@ import AuthenticatorCore
         do {
             if let text = NSPasteboard.general.string(forType: .string), text.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("otpauth") { add(try OTPImport.parse(text: text)) }
             else if let data = NSPasteboard.general.data(forType: .png) ?? NSPasteboard.general.data(forType: .tiff) { add(try QRImport.messages(in: data).flatMap { try OTPImport.parse(text: $0) }) }
-            else { error = "В буфере нет изображения QR-кода или ссылки otpauth." }
+            else { error = text("The clipboard contains no QR code image or otpauth link.") }
         } catch { self.error = error.localizedDescription }
     }
 }

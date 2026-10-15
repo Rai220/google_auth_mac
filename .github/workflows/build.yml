@@ -43,6 +43,7 @@ jobs:
             test "$GITHUB_REF_NAME" = "v$(cat VERSION)"
           fi
           python3 scripts/make-fixtures.py --check
+          python3 scripts/check-localization.py
       - name: Run regression checks with a temporary Keychain
         shell: bash
         run: |

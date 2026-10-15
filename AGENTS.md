@@ -20,6 +20,7 @@ Run commands from the repository root:
 
 ```sh
 python3 scripts/make-fixtures.py --check
+python3 scripts/check-localization.py
 swift run AuthenticatorChecks
 swift run AuthenticatorStateChecks
 ./scripts/build-app.sh
@@ -29,6 +30,12 @@ swift run AuthenticatorStateChecks
 Use `swift run AuthenticatorChecks`, not `swift test`: the suite deliberately works with Command Line Tools without XCTest. Never replace an actual failing test with a skipped assertion. For parser/OTP/storage changes add focused regression coverage and run the suite. For UI changes also build and inspect the affected flow with synthetic accounts. `--demo` uses public test keys and does not write to the real vault.
 
 Release checks must cover the packaged app: bundle version, CPU architecture, valid local signature, ZIP/DMG contents, and checksums. Passing source compilation alone does not establish a usable release. Do not modify the installed app in `~/Applications` as a side effect of building or testing.
+
+## Localization and screenshots
+
+English `README.md` is the primary documentation; keep `README.ru.md` in sync. App-owned strings use `L10n` / `Store.text` and the English-to-Russian catalog in `Sources/AuthenticatorCore/Localization.swift`. Keep placeholder indices identical across translations. Language changes must not modify account names or authentication state. macOS permission descriptions live in `Resources/{en,ru}.lproj`.
+
+README screenshots must be actual app captures from `--demo` with synthetic accounts only. Never capture or publish the production vault.
 
 ## Credentials and data
 

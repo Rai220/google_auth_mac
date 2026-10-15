@@ -62,7 +62,7 @@ final class AuthenticatorTests {
     func testVersion2WithoutBatchID() throws {
         let first = try OTPImport.parseURI(fixture("v2-1.txt")), second = try OTPImport.parseURI(fixture("v2-2.txt"))
         let unnamed = try OTPImport.parseURI(fixture("v2-empty-name.txt")).accounts[0]
-        expectEqual(unnamed.name, "Без названия"); expectEqual(unnamed.issuer, "Example")
+        expectEqual(unnamed.name, "Unnamed"); expectEqual(unnamed.issuer, "Example")
         expectEqual(first.batchID, nil)
         var session = ImportSession()
         try session.add([second]); expectEqual(session.missingParts, 1)

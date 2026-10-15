@@ -1,5 +1,6 @@
 import Foundation
 import AuthenticatorState
+import AuthenticatorCore
 
 @main struct StateChecks {
     @MainActor static func main() async {
@@ -62,7 +63,27 @@ import AuthenticatorState
         unavailable.setRequiresAuthentication(true)
         expect(!unavailable.requiresAuthentication && unavailable.error != nil, "Unavailable system authentication cannot lock the user out")
         expect(!defaults.bool(forKey: Store.authenticationPreferenceKey), "Unavailable authentication does not persist enabled setting")
-        print("Authentication settings: \(assertions) assertions, \(failures) failures")
+        expect(initial.language == .system, "Language defaults to system")
+        expect(AppLanguage.system.resolved(preferredLanguages: ["ru-RU"]) == .ru, "Russian system locale")
+        expect(AppLanguage.system.resolved(preferredLanguages: ["en-US"]) == .en, "English system locale")
+        expect(AppLanguage.system.resolved(preferredLanguages: ["ja-JP"]) == .en, "Unsupported locale falls back to English")
+        expect(AppLanguage.system.resolved(preferredLanguages: []) == .en, "Missing locale falls back to English")
+        reopened.setLanguage(.en)
+        expect(reopened.text("Your codes") == "Your codes", "English UI strings")
+        expect(makeStore().language == .en, "English preference survives restart")
+        reopened.setLanguage(.ru)
+        expect(reopened.text("Your codes") == "Ваши коды", "Russian UI strings")
+        expect(makeStore().language == .ru, "Russian preference survives restart")
+        expect(reopened.text("Accounts added: {0}", "3") == "Добавлено аккаунтов: 3", "Translated count interpolation")
+        expect(L10n.text("Copy code for {0} {1}", "{1}", "example", language: .en) == "Copy code for {1} example", "Account names are not interpreted as placeholders")
+        let snapshot = reopened.accounts
+        reopened.lock(); reopened.setLanguage(.en)
+        expect(reopened.locked && reopened.accounts.isEmpty, "Changing language cannot unlock the vault")
+        await reopened.unlockVault()
+        expect(reopened.accounts == snapshot, "Language changes preserve account data")
+        defaults.set("invalid", forKey: AppLanguage.preferenceKey)
+        expect(makeStore().language == .system, "Invalid preference falls back to system")
+        print("Authentication and language settings: \(assertions) assertions, \(failures) failures")
         exit(failures == 0 ? 0 : 1)
     }
 }

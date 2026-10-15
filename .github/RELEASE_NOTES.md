@@ -1,20 +1,21 @@
-## Изменения в 1.0.1
+## What's new in 1.0.2
 
-Запрос Touch ID или пароля macOS стал опциональным и по умолчанию выключен. Переключатель находится в «Настройки…» (⌘,); выбор сохраняется после перезапуска. При включённой защите подтверждение требуется при запуске, после сна и ручной блокировки. Ключи продолжают храниться в Связке ключей macOS.
+- English and Russian interfaces, including import, manual entry, settings, help text, and app-generated errors.
+- Choose **Follow system**, **English**, or **Русский** in Settings. The choice takes effect immediately and survives restarts. Account names and authentication settings are preserved.
+- English is now the primary README, with a Russian version and an actual app screenshot using only synthetic demo accounts.
 
-Окно настроек закрывается кнопкой «Готово», клавишей Escape. Изменения сохраняются автоматически. В боковом меню добавлена кнопка «Выйти» для полного завершения приложения.
+Touch ID or macOS password protection remains optional and off by default. Settings close with **Done** or Escape; **Quit** in the sidebar or ⌘Q exits the app.
 
-Нативный Authenticator для macOS 14 и новее. Локальный импорт Google Authenticator: изображения QR-кодов, буфер обмена, ссылки и камера. Поддерживаются серии экспорта версий 1 и 2, TOTP/HOTP и хранение в Связке ключей macOS.
+## Download and install
 
-## Скачать и установить
+Requires **macOS 14 or later**. Choose **arm64** for Apple Silicon or **x86_64** for Intel. Open the DMG and drag Mac Authenticator into Applications, or extract the ZIP.
 
-- **Apple Silicon (M1/M2/M3/M4 и новее):** файл с `arm64` в названии.
-- **Intel Mac:** файл с `x86_64` в названии.
-- **DMG:** откройте образ и перетащите Mac Authenticator в Applications.
-- **ZIP:** распакуйте и перенесите приложение в Applications.
+Builds are **ad-hoc signed**, without Apple Developer ID signing or notarization. macOS may require **System Settings → Privacy & Security → Open Anyway** after you verify the download source. Managed Macs may prohibit this.
 
-Сборки имеют ad-hoc подпись; сертификат Apple Developer ID и нотариализация **не используются**. При первом запуске macOS может заблокировать приложение как полученное от неизвестного разработчика. После проверки источника используйте штатную кнопку «Всё равно открыть» в «Системные настройки → Конфиденциальность и безопасность». На управляемом Mac политика организации может запрещать такой запуск.
+Both architectures are built and tested in GitHub Actions. Download `SHA256SUMS.txt` alongside the archives and verify them with `shasum -a 256 -c SHA256SUMS.txt` (missing files produce missing-file messages).
 
-Архивы собраны GitHub Actions после успешных тестов на обеих архитектурах. Контрольные суммы находятся в `SHA256SUMS.txt`; для проверки скачайте его вместе с архивами и выполните `shasum -a 256 -c SHA256SUMS.txt` (для отсутствующих файлов будут сообщения об отсутствии).
+The app runs locally and stores secrets in the macOS Keychain. No user QR codes or keys are included. Keep your original authenticator until you have checked the transfer. An independent application, not a Google product.
 
-QR-коды и ключи пользователей в релиз не включены. Не удаляйте исходные аккаунты на телефоне до проверки переноса. Независимое приложение, не продукт Google.
+## По-русски
+
+Добавлены русский и английский языки. Выбор в **Настройки → Язык** применяется сразу и сохраняется после перезапуска. README на английском стал основным; русская версия доступна по ссылке. Скриншот содержит только демонстрационные данные.

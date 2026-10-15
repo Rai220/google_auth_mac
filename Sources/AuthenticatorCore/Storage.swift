@@ -13,10 +13,10 @@ public struct Vault {
         let status = SecItemCopyMatching(request as CFDictionary, &result)
         if status == errSecItemNotFound { return [] }
         try check(status)
-        guard let data = result as? Data else { throw AuthError.invalid("Не удалось прочитать Связку ключей.") }
+        guard let data = result as? Data else { throw AuthError.invalid(L10n.text("Could not read the macOS Keychain.")) }
         let accounts = try JSONDecoder().decode([Account].self, from: data)
         for account in accounts { try account.validate() }
-        guard Set(accounts.map(\.id)).count == accounts.count else { throw AuthError.invalid("Повреждённое хранилище аккаунтов.") }
+        guard Set(accounts.map(\.id)).count == accounts.count else { throw AuthError.invalid(L10n.text("The account vault is damaged.")) }
         return accounts
     }
     public func save(_ accounts: [Account]) throws {
@@ -26,29 +26,29 @@ public struct Vault {
         if status == errSecItemNotFound {
             var request = query; request[kSecValueData as String] = data
             request[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
-            request[kSecAttrLabel as String] = "Mac Authenticator — аккаунты"
+            request[kSecAttrLabel as String] = L10n.text("Mac Authenticator — accounts")
             try check(SecItemAdd(request as CFDictionary, nil))
         } else { try check(status) }
     }
     public func delete() throws { let status = SecItemDelete(query as CFDictionary); if status != errSecItemNotFound { try check(status) } }
     private func check(_ status: OSStatus) throws {
-        guard status == errSecSuccess else { throw AuthError.invalid("Связка ключей: \(SecCopyErrorMessageString(status, nil) as String? ?? String(status))") }
+        guard status == errSecSuccess else { throw AuthError.invalid(L10n.text("Keychain: {0}", String(SecCopyErrorMessageString(status, nil) as String? ?? String(status)))) }
     }
 }
 public enum QRImport {
     public static func messages(in data: Data) throws -> [String] {
-        guard data.count <= 30_000_000 else { throw AuthError.invalid("Изображение больше 30 МБ.") }
+        guard data.count <= 30_000_000 else { throw AuthError.invalid(L10n.text("The image exceeds 30 MB.")) }
         guard let source = CGImageSourceCreateWithData(data as CFData, nil),
-              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceThumbnailMaxPixelSize: 4096, kCGImageSourceCreateThumbnailWithTransform: true] as CFDictionary) else { throw AuthError.invalid("Не удалось открыть изображение.") }
+              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true, kCGImageSourceThumbnailMaxPixelSize: 4096, kCGImageSourceCreateThumbnailWithTransform: true] as CFDictionary) else { throw AuthError.invalid(L10n.text("Could not open the image.")) }
         let request = VNDetectBarcodesRequest(); request.symbologies = [.qr]
         try VNImageRequestHandler(cgImage: image).perform([request])
         let messages = (request.results ?? []).compactMap(\.payloadStringValue).filter { $0.hasPrefix("otpauth://") || $0.hasPrefix("otpauth-migration://") }
-        guard !messages.isEmpty else { throw AuthError.invalid("QR-код Authenticator не найден. Выберите чёткое изображение целиком, с полями вокруг кода.") }
+        guard !messages.isEmpty else { throw AuthError.invalid(L10n.text("No Authenticator QR code found. Choose a clear, complete image with a margin around the code.")) }
         return messages
     }
     public static func read(url: URL) throws -> [ImportPart] {
         let size = try url.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-        guard size <= 30_000_000 else { throw AuthError.invalid("Файл больше 30 МБ.") }
+        guard size <= 30_000_000 else { throw AuthError.invalid(L10n.text("The file exceeds 30 MB.")) }
         let data = try Data(contentsOf: url, options: .mappedIfSafe)
         if let text = String(data: data, encoding: .utf8), text.trimmingCharacters(in: .whitespacesAndNewlines).hasPrefix("otpauth") { return try OTPImport.parse(text: text) }
         return try messages(in: data).flatMap { try OTPImport.parse(text: $0) }

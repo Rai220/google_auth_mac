@@ -15,6 +15,7 @@ APP="$PWD/dist/Mac Authenticator.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" .build/AppIcon.iconset
 cp "$BIN_PATH/MacAuthenticator" "$APP/Contents/MacOS/MacAuthenticator"
+cp -R Resources/en.lproj Resources/ru.lproj "$APP/Contents/Resources/"
 cp Resources/Info.plist "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $APP_VERSION" "$APP/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $APP_VERSION" "$APP/Contents/Info.plist"
